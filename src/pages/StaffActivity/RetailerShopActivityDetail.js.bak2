@@ -1,0 +1,945 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Grid,
+  Chip,
+  Divider,
+  Button,
+  Alert,
+  CircularProgress,
+  Card,
+  CardContent,
+  CardHeader,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Collapse,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Avatar,
+  Badge,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Tooltip
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Person as PersonIcon,
+  Business as BusinessIcon,
+  LocationOn as LocationIcon,
+  AccessTime as TimeIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  ShoppingCart as OrderIcon,
+  QuestionAnswer as InquiryIcon,
+  Compare as AlternativeIcon,
+  Assessment as ReportIcon,
+  Warning as ComplaintIcon,
+  TrendingUp as InsightIcon,
+  Group as CompetitorIcon,
+  ExpandMore as ExpandMoreIcon,
+  Star as StarIcon,
+  MonetizationOn as MoneyIcon,
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckIcon,
+  RadioButtonUnchecked as UncheckedIcon,
+  Storefront as ShopIcon,
+  LocalShipping as DeliveryIcon,
+  Info as InfoIcon,
+  Task as TaskIcon,
+  PhotoCamera as CameraIcon,
+  AccessTime as AccessTimeIcon
+} from '@mui/icons-material';
+import { format } from 'date-fns';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { retailerShopActivityService } from '../../services/api';
+
+const RetailerShopActivityDetail = () => {
+  const { activityId, taskId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [taskActivity, setTaskActivity] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({
+    distributorActivity: true,
+    shopActivities: true,
+    brandEstimates: false
+  });
+
+  useEffect(() => {
+    fetchTaskActivityDetail();
+  }, [activityId, taskId]);
+
+  const fetchTaskActivityDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let targetTaskId = taskId; // Direct taskId from URL
+      
+      // If we don't have a direct taskId, try to get it from activityId
+      if (!targetTaskId && activityId) {
+        const activityResponse = await retailerShopActivityService.getActivity(activityId);
+        
+        if (activityResponse && activityResponse.success && activityResponse.data.taskId) {
+          targetTaskId = activityResponse.data.taskId;
+        } else {
+          setError('Failed to fetch task activity details');
+          return;
+        }
+      }
+      
+      // If we still don't have a taskId, show error
+      if (!targetTaskId) {
+        setError('No task ID available');
+        return;
+      }
+      
+      // Get the grouped task data
+      const taskResponse = await retailerShopActivityService.getActivitiesGroupedByTask({
+        taskId: targetTaskId,
+        page: 1,
+        limit: 1
+      });
+      
+      if (taskResponse && taskResponse.success && taskResponse.data.length > 0) {
+        setTaskActivity(taskResponse.data[0]);
+        console.log('Task Activity Detail:', taskResponse.data[0]);
+        
+        // If we have a highlighted activity ID from navigation state, scroll to it
+        const highlightActivityId = location.state?.highlightActivity;
+        if (highlightActivityId) {
+          // You can add scroll logic here if needed
+          console.log('Highlighting activity:', highlightActivityId);
+        }
+      } else {
+        setError('Task activity not found');
+      }
+    } catch (err) {
+      console.error('Error fetching task activity detail:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to load activity details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return 'Not recorded';
+    try {
+      return format(new Date(dateTimeString), 'MMM dd, yyyy - h:mm a');
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  const formatTime = (dateTimeString) => {
+    if (!dateTimeString) return '-';
+    try {
+      return format(new Date(dateTimeString), 'h:mm a');
+    } catch (error) {
+      return 'Invalid time';
+    }
+  };
+
+  const calculateDuration = (startTime, endTime) => {
+    if (!startTime || !endTime) return 'Ongoing';
+    try {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const duration = Math.round((end - start) / (1000 * 60)); // in minutes
+      const hours = Math.floor(duration / 60);
+      const minutes = duration % 60;
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes} minutes`;
+    } catch (error) {
+      return 'Invalid duration';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Completed': return 'success';
+      case 'In Progress': return 'warning';
+      case 'Incomplete': return 'error';
+      case 'Punched In': return 'primary';
+      case 'Punched Out': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const getVisitTypeColor = (visitType) => {
+    switch (visitType) {
+      case 'Scheduled': return 'primary';
+      case 'Unscheduled': return 'secondary';
+      case 'Follow-up': return 'info';
+      case 'Emergency': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getFrequencyColor = (frequency) => {
+    switch (frequency) {
+      case 'First Time': return 'success';
+      case 'Weekly': return 'error';
+      case 'Monthly': return 'warning';
+      case 'Quarterly': return 'info';
+      case 'Rarely': return 'default';
+      default: return 'default';
+    }
+  };
+
+  const getDemandColor = (demand) => {
+    switch (demand) {
+      case 'High': return 'error';
+      case 'Medium': return 'warning';
+      case 'Low': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const calculateTotalOrderValue = (orders) => {
+    if (!orders || orders.length === 0) return 0;
+    return orders.reduce((total, order) => {
+      const value = order.totalValue || (order.rate * order.quantity) || 0;
+      return total + value;
+    }, 0);
+  };
+
+  const getComplaintSeverityColor = (severity) => {
+    switch (severity) {
+      case 'Critical': return 'error';
+      case 'High': return 'warning';
+      case 'Medium': return 'info';
+      case 'Low': return 'success';
+      default: return 'default';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/staff-activity/shop-activities')}
+          variant="outlined"
+        >
+          Back to List
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!taskActivity) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Task activity not found
+        </Alert>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/staff-activity/shop-activities')}
+          variant="outlined"
+        >
+          Back to List
+        </Button>
+      </Container>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/staff-activity/shop-activities')}
+          variant="outlined"
+          sx={{ mb: 2 }}
+        >
+          Back to List
+        </Button>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Staff Activity
+        </Typography>
+      </Box>
+
+      <Grid container spacing={3}>
+        {/* Task Information */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: 'fit-content' }}>
+            <CardHeader
+              avatar={<TaskIcon />}
+              title="Task Information"
+              sx={{ backgroundColor: 'primary.main', color: 'white' }}
+            />
+            <CardContent>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Task Title
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {taskActivity.task?.title || 'Task Details Not Available'}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Description
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.task?.description || 'No description available'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Chip 
+                    label={taskActivity.task?.status || 'Unknown'} 
+                    color={getStatusColor(taskActivity.task?.status)} 
+                    size="small" 
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Deadline
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.task?.deadline ? formatDateTime(taskActivity.task.deadline) : 'No deadline set'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Staff Information */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: 'fit-content' }}>
+            <CardHeader
+              avatar={<PersonIcon />}
+              title="Staff Info"
+              sx={{ backgroundColor: 'secondary.main', color: 'white' }}
+            />
+            <CardContent>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Name
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {taskActivity.marketingStaff?.name || 'Unknown Staff'}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Email
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.marketingStaff?.email || 'N/A'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Phone
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.marketingStaff?.phone || 'N/A'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Role
+                  </Typography>
+                  <Typography variant="body2">
+                    Marketing Staff
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Distributor Information */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: 'fit-content' }}>
+            <CardHeader
+              avatar={<BusinessIcon />}
+              title="Distributors Visited"
+              sx={{ backgroundColor: 'info.main', color: 'white' }}
+            />
+            <CardContent>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Distributor Name
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium" color="primary">
+                    {taskActivity.distributor?.name || 'Unknown Distributor'}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Shop Name
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.distributor?.shopName || 'N/A'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Address
+                  </Typography>
+                  <Typography variant="body2">
+                    {taskActivity.distributor?.address || 'N/A'}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Summary
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <Chip label={`${taskActivity.totalShopsVisited || 0} Shops Visited`} size="small" color="primary" />
+                    <Chip label={`${taskActivity.totalSalesOrders || 0} Orders`} size="small" color="success" />
+                    <Chip label={`${taskActivity.totalMarketInquiries || 0} Inquiries`} size="small" color="warning" />
+                  </Stack>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Distributor Activity Details */}
+        <Grid item xs={12}>
+          <Accordion 
+            expanded={expandedSections.distributorActivity} 
+            onChange={() => handleToggleSection('distributorActivity')}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccessTimeIcon />
+                <Typography variant="h6">Distributor Activity</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Visit Timeline
+                      </Typography>
+                      <Stack spacing={2}>
+                        <Box>
+                          <Typography variant="body2" color="success.main" fontWeight="medium">
+                            Punch In: {formatTime(taskActivity.distributorActivity?.meetingStartTime)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="error.main" fontWeight="medium">
+                            Punch Out: {formatTime(taskActivity.distributorActivity?.meetingEndTime)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Duration: {calculateDuration(
+                              taskActivity.distributorActivity?.meetingStartTime,
+                              taskActivity.distributorActivity?.meetingEndTime
+                            )}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Date: {formatDateTime(taskActivity.distributorActivity?.meetingStartTime).split(' - ')[0]}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Chip 
+                            label={taskActivity.distributorActivity?.status || 'Unknown'} 
+                            color={getStatusColor(taskActivity.distributorActivity?.status)} 
+                            size="small" 
+                          />
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Visit Details
+                      </Typography>
+                      <Stack spacing={2}>
+                        {taskActivity.distributorActivity?.tripCompanion && (
+                          <Box>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Trip Companion
+                            </Typography>
+                            <Typography variant="body2">
+                              {taskActivity.distributorActivity.tripCompanion.name} 
+                              ({taskActivity.distributorActivity.tripCompanion.category})
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {taskActivity.distributorActivity?.modeOfTransport && (
+                          <Box>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Mode of Transport
+                            </Typography>
+                            <Typography variant="body2">
+                              {taskActivity.distributorActivity.modeOfTransport}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {taskActivity.distributorActivity?.areaName && (
+                          <Box>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Area
+                            </Typography>
+                            <Typography variant="body2">
+                              {taskActivity.distributorActivity.areaName}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {taskActivity.distributorActivity?.selfieImage && (
+                          <Box>
+                            <Typography variant="subtitle2" color="text.secondary">
+                              Selfie
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<CameraIcon />}
+                              onClick={() => window.open(taskActivity.distributorActivity.selfieImage, '_blank')}
+                            >
+                              View Selfie
+                            </Button>
+                          </Box>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        </Grid>
+
+        {/* Initial Stock Estimate and Rate */}
+        {taskActivity.distributorActivity?.brandSupplyEstimates && 
+         taskActivity.distributorActivity.brandSupplyEstimates.length > 0 && (
+          <Grid item xs={12}>
+            <Accordion 
+              expanded={expandedSections.brandEstimates} 
+              onChange={() => handleToggleSection('brandEstimates')}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                   <ReportIcon />
+                   <Typography variant="h6">Initial Stock Estimate and Rate</Typography>
+                 </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {taskActivity.distributorActivity.brandSupplyEstimates.map((brand, brandIndex) => (
+                  <Box key={brandIndex} sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
+                      {brand.name}
+                    </Typography>
+                    {brand.variants?.map((variant, variantIndex) => (
+                      <Box key={variantIndex} sx={{ mb: 2 }}>
+                        <TableContainer component={Paper} variant="outlined">
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Variant</TableCell>
+                                <TableCell>Size</TableCell>
+                                <TableCell align="right">Stock</TableCell>
+                                <TableCell align="right">Rate (₹)</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {variant.sizes?.map((size, sizeIndex) => (
+                                <TableRow key={sizeIndex}>
+                                  <TableCell>{variant.name}</TableCell>
+                                  <TableCell>{size.name}</TableCell>
+                                  <TableCell align="right">{size.openingStock || 0}</TableCell>
+                                  <TableCell align="right">₹ {size.proposedMarketRate || 0}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    ))}
+                  </Box>
+                ))}
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        )}
+
+        {/* Shop Activities */}
+        <Grid item xs={12}>
+          <Accordion 
+            expanded={expandedSections.shopActivities} 
+            onChange={() => handleToggleSection('shopActivities')}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ShopIcon />
+                <Typography variant="h6">Shop Activities ({taskActivity.shopActivities?.length || 0})</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              {!taskActivity.shopActivities || taskActivity.shopActivities.length === 0 ? (
+                <Alert severity="info">
+                  No shop activities recorded for this task
+                </Alert>
+              ) : (
+                <Grid container spacing={2}>
+                  {taskActivity.shopActivities.map((shopActivity, index) => {
+                    // Find shop details with fallback to shopActivity.shop if populated
+                    const shop = taskActivity.shops?.find(s => s._id === shopActivity.shopId) || 
+                              (shopActivity.shopId && typeof shopActivity.shopId === 'object' ? shopActivity.shopId : null);
+                    const shopName = shop?.name || 
+                                  (shopActivity.shopId?.name || 'Unknown Shop');
+                    const totalOrderValue = calculateTotalOrderValue(shopActivity.salesOrders);
+                    
+                    return (
+                      <Grid item xs={12} key={shopActivity._id}>
+                        <Card variant="outlined">
+                          <CardHeader
+                            avatar={
+                              <Avatar sx={{ bgcolor: 'primary.main' }}>
+                                <ShopIcon />
+                              </Avatar>
+                            }
+                            title={shopName}
+                            subheader={
+                              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                <Chip 
+                                  label={shopActivity.status} 
+                                  color={getStatusColor(shopActivity.status)} 
+                                  size="small" 
+                                />
+                                {shopActivity.visitType && (
+                                  <Chip 
+                                    label={shopActivity.visitType} 
+                                    color={getVisitTypeColor(shopActivity.visitType)} 
+                                    variant="outlined" 
+                                    size="small" 
+                                  />
+                                )}
+                                {shopActivity.visitObjective && (
+                                  <Chip 
+                                    label={shopActivity.visitObjective} 
+                                    variant="outlined" 
+                                    size="small" 
+                                  />
+                                )}
+                              </Stack>
+                            }
+                            action={
+                              <Stack spacing={1} alignItems="center">
+                                <Typography variant="caption" color="text.secondary">
+                                  {formatTime(shopActivity.punchInTime)} - {formatTime(shopActivity.punchOutTime)}
+                                </Typography>
+                                <Stack direction="row" spacing={1}>
+                                  <Badge badgeContent={shopActivity.salesOrders?.length || 0} color="primary">
+                                    <OrderIcon fontSize="small" />
+                                  </Badge>
+                                  <Badge badgeContent={shopActivity.marketInquiries?.length || 0} color="warning">
+                                    <InquiryIcon fontSize="small" />
+                                  </Badge>
+                                  <Badge badgeContent={shopActivity.alternateProviders?.length || 0} color="secondary">
+                                    <AlternativeIcon fontSize="small" />
+                                  </Badge>
+                                </Stack>
+                              </Stack>
+                            }
+                          />
+                          <CardContent>
+                            <Grid container spacing={3}>
+                              {/* Sales Orders */}
+                              {shopActivity.salesOrders && shopActivity.salesOrders.length > 0 && (
+                                <Grid item xs={12} md={6}>
+                                  <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <OrderIcon color="primary" />
+                                    Sales Orders ({shopActivity.salesOrders.length})
+                                  </Typography>
+                                  <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>Brand</TableCell>
+                                          <TableCell>Variant</TableCell>
+                                          <TableCell>Size</TableCell>
+                                          <TableCell align="right">Qty</TableCell>
+                                          <TableCell align="right">Rate</TableCell>
+                                          <TableCell align="right">Value</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {shopActivity.salesOrders.map((order, orderIndex) => (
+                                          <TableRow key={orderIndex}>
+                                            <TableCell>{order.brandName}</TableCell>
+                                            <TableCell>{order.variant}</TableCell>
+                                            <TableCell>{order.size}</TableCell>
+                                            <TableCell align="right">{order.quantity}</TableCell>
+                                            <TableCell align="right">₹{order.rate || 0}</TableCell>
+                                            <TableCell align="right">₹{order.totalValue || (order.rate * order.quantity) || 0}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                        <TableRow>
+                                          <TableCell colSpan={5} align="right">
+                                            <Typography variant="subtitle2" fontWeight="bold">
+                                              Total Value:
+                                            </Typography>
+                                          </TableCell>
+                                          <TableCell align="right">
+                                            <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                                              ₹{totalOrderValue}
+                                            </Typography>
+                                          </TableCell>
+                                        </TableRow>
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                </Grid>
+                              )}
+
+                              {/* Market Inquiries */}
+                              {shopActivity.marketInquiries && shopActivity.marketInquiries.length > 0 && (
+                                <Grid item xs={12} md={6}>
+                                  <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <InquiryIcon color="warning" />
+                                    Market Inquiries ({shopActivity.marketInquiries.length})
+                                  </Typography>
+                                  <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>Brand</TableCell>
+                                          <TableCell>Variant</TableCell>
+                                          <TableCell>Type</TableCell>
+                                          <TableCell>Frequency</TableCell>
+                                          <TableCell>Demand</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {shopActivity.marketInquiries.map((inquiry, inquiryIndex) => (
+                                          <TableRow key={inquiryIndex}>
+                                            <TableCell>{inquiry.brandName}</TableCell>
+                                            <TableCell>{inquiry.variant}</TableCell>
+                                            <TableCell>{inquiry.inquiryType}</TableCell>
+                                            <TableCell>
+                                              <Chip 
+                                                label={inquiry.frequencyOfInquiry} 
+                                                color={getFrequencyColor(inquiry.frequencyOfInquiry)} 
+                                                size="small" 
+                                              />
+                                            </TableCell>
+                                            <TableCell>
+                                              <Chip 
+                                                label={inquiry.customerDemand} 
+                                                color={getDemandColor(inquiry.customerDemand)} 
+                                                size="small" 
+                                              />
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                </Grid>
+                              )}
+
+                              {/* Alternate Providers */}
+                              {shopActivity.alternateProviders && shopActivity.alternateProviders.length > 0 && (
+                                <Grid item xs={12}>
+                                  <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <AlternativeIcon color="secondary" />
+                                    Alternate Providers ({shopActivity.alternateProviders.length})
+                                  </Typography>
+                                  <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>For Product</TableCell>
+                                          <TableCell>Provider Brand</TableCell>
+                                          <TableCell>Variant</TableCell>
+                                          <TableCell>Size</TableCell>
+                                          <TableCell align="right">Rate</TableCell>
+                                          <TableCell>Stock Date</TableCell>
+                                          <TableCell>Market Share</TableCell>
+                                          <TableCell>Quality</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {shopActivity.alternateProviders.map((provider, providerIndex) => (
+                                          <TableRow key={providerIndex}>
+                                            <TableCell>{provider.for}</TableCell>
+                                            <TableCell>{provider.brandName}</TableCell>
+                                            <TableCell>{provider.variant}</TableCell>
+                                            <TableCell>{provider.size}</TableCell>
+                                            <TableCell align="right">₹{provider.rate}</TableCell>
+                                            <TableCell>{provider.providerName || 'N/A'}</TableCell>
+                                            <TableCell>
+                                              <Chip 
+                                                label={provider.marketShare || 'Unknown'} 
+                                                size="small" 
+                                                variant="outlined"
+                                              />
+                                            </TableCell>
+                                            <TableCell>
+                                              {provider.qualityRating && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                  <StarIcon fontSize="small" color="warning" />
+                                                  <Typography variant="body2">
+                                                    {provider.qualityRating}/5
+                                                  </Typography>
+                                                </Box>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                </Grid>
+                              )}
+
+                              {/* Additional Information */}
+                              <Grid item xs={12}>
+                                <Grid container spacing={2}>
+                                  {shopActivity.complaint && (
+                                    <Grid item xs={12} md={6}>
+                                      <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                        <Typography variant="subtitle2" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                          <ComplaintIcon />
+                                          Complaint 
+                                          {shopActivity.complaintSeverity && (
+                                            <Chip 
+                                              label={shopActivity.complaintSeverity} 
+                                              color={getComplaintSeverityColor(shopActivity.complaintSeverity)} 
+                                              size="small" 
+                                            />
+                                          )}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {shopActivity.complaint}
+                                        </Typography>
+                                      </Box>
+                                    </Grid>
+                                  )}
+
+                                  {shopActivity.marketInsight && (
+                                    <Grid item xs={12} md={6}>
+                                      <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                        <Typography variant="subtitle2" color="info.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                          <InsightIcon />
+                                          Market Insight
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {shopActivity.marketInsight}
+                                        </Typography>
+                                      </Box>
+                                    </Grid>
+                                  )}
+
+                                  {shopActivity.competitorActivity && (
+                                    <Grid item xs={12} md={6}>
+                                      <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                        <Typography variant="subtitle2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                          <CompetitorIcon />
+                                          Competitor Activity
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {shopActivity.competitorActivity}
+                                        </Typography>
+                                      </Box>
+                                    </Grid>
+                                  )}
+
+                                  {shopActivity.salesPotential && (
+                                    <Grid item xs={12} md={6}>
+                                      <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                                                                 <Typography variant="subtitle2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                           <InsightIcon />
+                                           Sales Potential
+                                         </Typography>
+                                        <Chip 
+                                          label={shopActivity.salesPotential} 
+                                          color={getDemandColor(shopActivity.salesPotential)} 
+                                          size="small" 
+                                        />
+                                      </Box>
+                                    </Grid>
+                                  )}
+                                </Grid>
+                              </Grid>
+                            </Grid>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        </Grid>
+      </Grid>
+    </Container>
+  );
+};
+
+export default RetailerShopActivityDetail; 

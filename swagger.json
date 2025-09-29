@@ -1,0 +1,2147 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Food Distribution Company API",
+    "description": "API documentation for the food distribution company's management system",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Admin Team",
+      "email": "admin@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sales Inquiries",
+      "description": "Operations for managing sales inquiries from distributors"
+    },
+    {
+      "name": "Mobile",
+      "description": "Mobile app specific endpoints"
+    },
+    {
+      "name": "Damage Claims",
+      "description": "Operations for managing damage claims from distributors"
+    },
+    {
+      "name": "Marketing Staff Activity",
+      "description": "Endpoints for managing marketing staff activities"
+    }
+  ],
+  "paths": {
+    "/api/sales-inquiries": {
+      "post": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Create a new sales inquiry",
+        "description": "Submit a new sales inquiry for a distributor with multiple products",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesInquiryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sales inquiry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Distributor not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Get all sales inquiries",
+        "description": "Retrieve all sales inquiries with optional filtering by status or distributor",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["Pending", "Processing", "Completed", "Rejected"]
+            },
+            "description": "Filter inquiries by status"
+          },
+          {
+            "in": "query",
+            "name": "distributorId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter inquiries by distributor ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sales inquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SalesInquiry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sales-inquiries/user": {
+      "get": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Get current user's sales inquiries",
+        "description": "Retrieve all sales inquiries created by the current user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["Pending", "Processing", "Completed", "Rejected"]
+            },
+            "description": "Filter inquiries by status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user's sales inquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SalesInquiry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sales-inquiries/{id}": {
+      "get": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Get a single sales inquiry",
+        "description": "Retrieve a specific sales inquiry by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sales inquiry ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sales inquiry details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to view this inquiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sales inquiry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Update sales inquiry status",
+        "description": "Update the status of a sales inquiry",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sales inquiry ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["Processing", "Completed", "Rejected"],
+                    "description": "New status for the inquiry"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Notes about the processing of the inquiry"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sales inquiry status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to update this inquiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sales inquiry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Sales Inquiries"],
+        "summary": "Delete a sales inquiry",
+        "description": "Delete a specific sales inquiry by ID (Admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sales inquiry ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sales inquiry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Sales inquiry deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized to delete this inquiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sales inquiry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/sales-inquiries": {
+      "post": {
+        "tags": ["Mobile", "Sales Inquiries"],
+        "summary": "Create a new sales inquiry (Mobile)",
+        "description": "Marketing Staff submits a sales inquiry for products from mobile app",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesInquiryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sales inquiry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Distributor not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/sales-inquiries/my-inquiries": {
+      "get": {
+        "tags": ["Mobile", "Sales Inquiries"],
+        "summary": "Get all my sales inquiries (Mobile)",
+        "description": "Get sales inquiries accessible to Marketing Staff, Mid-Level Manager, and Godown Incharge. Note: Dispatched orders are not visible to Mid-Level Managers.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["Pending", "Processing", "Commented", "Completed", "Rejected", "Dispatched"]
+            },
+            "description": "Filter inquiries by status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sales inquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SalesInquiry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/sales-inquiries/{inquiryId}": {
+      "get": {
+        "tags": ["Mobile", "Sales Inquiries"],
+        "summary": "Get a single sales inquiry (Mobile)",
+        "description": "Get details of a single sales inquiry accessible to all authorized staff including Marketing Staff, Mid-Level Manager, Godown Incharge and Admin",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inquiryId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sales inquiry ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sales inquiry details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sales inquiry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/damage-claims/mlm/all": {
+      "get": {
+        "tags": ["Mobile", "Damage Claims"],
+        "summary": "Get all damage claims (MLM)",
+        "description": "Retrieve all damage claims visible to Mid-Level Managers",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["Pending", "Approved", "Partially Approved", "Rejected"]
+            },
+            "description": "Filter claims by status"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of damage claims",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DamageClaim"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized - requires MLM role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/damage-claims/mlm/{claimId}": {
+      "get": {
+        "tags": ["Mobile", "Damage Claims"],
+        "summary": "Get damage claim details (MLM)",
+        "description": "Retrieve detailed information about a specific damage claim for MLM",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Damage claim ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Damage claim details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DamageClaim"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized - requires MLM role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Damage claim not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/damage-claims/mlm/{claimId}/comment": {
+      "patch": {
+        "tags": ["Mobile", "Damage Claims"],
+        "summary": "Add MLM comment to damage claim",
+        "description": "Add a Mid-Level Manager's comment to a damage claim",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Damage claim ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["comment"],
+                "properties": {
+                  "comment": {
+                    "type": "string",
+                    "example": "Verified the damage claim. Pictures are clear."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comment added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DamageClaim"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized - requires MLM role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Damage claim not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/damage-claims/godown/all": {
+      "get": {
+        "tags": ["Mobile", "Damage Claims"],
+        "summary": "Get all damage claims (Godown Incharge)",
+        "description": "Retrieve all damage claims visible to Godown Incharge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["Pending", "Approved", "Partially Approved", "Rejected"]
+            },
+            "description": "Filter claims by status"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of damage claims",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DamageClaim"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized - requires Godown Incharge role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/damage-claims/godown/{claimId}": {
+      "get": {
+        "tags": ["Mobile", "Damage Claims"],
+        "summary": "Get damage claim details (Godown Incharge)",
+        "description": "Retrieve detailed information about a specific damage claim for Godown Incharge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "claimId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Damage claim ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Damage claim details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DamageClaim"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized - requires Godown Incharge role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Damage claim not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/profile": {
+      "get": {
+        "tags": ["Mobile", "Authentication"],
+        "summary": "Get user profile (Mobile)",
+        "description": "Retrieve the authenticated user's profile details based on their token",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/sales-inquiries/{inquiryId}/dispatch": {
+      "patch": {
+        "tags": ["Mobile", "Sales Inquiries"],
+        "summary": "Dispatch order for sales inquiry (Godown Incharge)",
+        "description": "Godown Incharge dispatches the order with vehicle and reference details",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inquiryId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sales inquiry ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dispatchDate",
+                  "vehicleId"
+                ],
+                "properties": {
+                  "dispatchDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2023-05-10",
+                    "description": "Date of order dispatch"
+                  },
+                  "vehicleId": {
+                    "type": "string",
+                    "example": "DL 01 AC 2011",
+                    "description": "Vehicle ID/number used for transport"
+                  },
+                  "referenceNumber": {
+                    "type": "string",
+                    "example": "REF123456",
+                    "description": "Optional reference number for the dispatch"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order dispatched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SalesInquiry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sales inquiry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/marketing-activity/punch-in": {
+      "post": {
+        "tags": ["Mobile", "Marketing Staff Activity"],
+        "summary": "Punch in a marketing staff activity",
+        "description": "Record a new marketing staff activity with punch-in information",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "retailShop",
+                  "distributor",
+                  "areaName",
+                  "tripCompanion",
+                  "modeOfTransport",
+                  "selfieImage"
+                ],
+                "properties": {
+                  "retailShop": {
+                    "type": "string",
+                    "example": "Shyam ji foods"
+                  },
+                  "distributor": {
+                    "type": "string",
+                    "example": "Shyam Chaudhary"
+                  },
+                  "areaName": {
+                    "type": "string",
+                    "example": "223/23, Ramesh Nagar, Delhi"
+                  },
+                  "tripCompanion": {
+                    "type": "object",
+                    "required": ["category", "name"],
+                    "properties": {
+                      "category": {
+                        "type": "string",
+                        "enum": ["Distributor Staff", "Marketing Staff"],
+                        "example": "Distributor Staff"
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "Nitin"
+                      }
+                    }
+                  },
+                  "modeOfTransport": {
+                    "type": "string",
+                    "enum": ["Vehicle", "Auto", "Bike"],
+                    "example": "Vehicle"
+                  },
+                  "selfieImage": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Base64 encoded image"
+                  },
+                  "shopTypes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["Retailer", "Whole Seller"]
+                    },
+                    "example": ["Retailer", "Whole Seller"]
+                  },
+                  "shops": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "type"],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Nandu Shop"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["Retailer", "Whole Seller"],
+                          "example": "Retailer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Activity created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingStaffActivity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/marketing-activity/{id}/punch-out": {
+      "patch": {
+        "tags": ["Mobile", "Marketing Staff Activity"],
+        "summary": "Punch out from a marketing staff activity",
+        "description": "Update an existing activity with punch-out information",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Activity ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["shops"],
+                "properties": {
+                  "shops": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "type"],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Anand Shop"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["Retailer", "Whole Seller"],
+                          "example": "Retailer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Activity updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketingStaffActivity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Activity not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/retailer-shop-activity/sales-orders": {
+      "get": {
+        "tags": ["Mobile App"],
+        "summary": "Get all sales order activities with details",
+        "description": "Retrieves detailed information about shop visits and sales orders. Marketing staff can only see their own activities while Admin and Mid-Level Managers can see all activities.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter from date (YYYY-MM-DD)",
+            "example": "2025-06-01"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter to date (YYYY-MM-DD)",
+            "example": "2025-06-04"
+          },
+          {
+            "in": "query",
+            "name": "distributorId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by distributor ID"
+          },
+          {
+            "in": "query",
+            "name": "staffId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by staff ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved sales order activities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "activityId": {
+                            "type": "string",
+                            "example": "60d21b4667d0d8992e610c85"
+                          },
+                          "date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-06-04T09:00:00Z"
+                          },
+                          "staffName": {
+                            "type": "string",
+                            "example": "John Doe"
+                          },
+                          "distributorName": {
+                            "type": "string",
+                            "example": "ABC Distributors"
+                          },
+                          "distributorAddress": {
+                            "type": "string",
+                            "example": "123 Main St, City"
+                          },
+                          "shopName": {
+                            "type": "string",
+                            "example": "XYZ Shop"
+                          },
+                          "shopOwner": {
+                            "type": "string",
+                            "example": "Shop Owner Name"
+                          },
+                          "shopAddress": {
+                            "type": "string",
+                            "example": "456 Shop St, City"
+                          },
+                          "shopType": {
+                            "type": "string",
+                            "enum": ["Retailer", "Whole Seller"],
+                            "example": "Retailer"
+                          },
+                          "punchInTime": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-06-04T09:00:00Z"
+                          },
+                          "punchOutTime": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-06-04T11:00:00Z"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["In Progress", "Completed"],
+                            "example": "Completed"
+                          },
+                          "salesOrders": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "brandName": {
+                                  "type": "string",
+                                  "example": "Brand X"
+                                },
+                                "variant": {
+                                  "type": "string",
+                                  "example": "Regular"
+                                },
+                                "size": {
+                                  "type": "string",
+                                  "example": "100g"
+                                },
+                                "quantity": {
+                                  "type": "number",
+                                  "example": 50
+                                },
+                                "isDisplayedInCounter": {
+                                  "type": "boolean",
+                                  "example": true
+                                }
+                              }
+                            }
+                          },
+                          "totalOrderItems": {
+                            "type": "integer",
+                            "example": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated - Valid JWT token required"
+          },
+          "403": {
+            "description": "Not authorized - Requires proper role access"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SalesInquiryInput": {
+        "type": "object",
+        "required": [
+          "distributorId",
+          "distributorName",
+          "products"
+        ],
+        "properties": {
+          "distributorId": {
+            "type": "string",
+            "description": "ID of the distributor",
+            "example": "60d21b1c67d0d8992e610c83"
+          },
+          "distributorName": {
+            "type": "string",
+            "description": "Name of the distributor",
+            "example": "ABC Enterprises"
+          },
+          "products": {
+            "type": "array",
+            "description": "Array of products for the inquiry",
+            "items": {
+              "type": "object",
+              "required": [
+                "brand",
+                "variant",
+                "size",
+                "quantity"
+              ],
+              "properties": {
+                "brand": {
+                  "type": "string",
+                  "description": "Brand name",
+                  "example": "FoodBrand"
+                },
+                "variant": {
+                  "type": "string",
+                  "description": "Variant of the product",
+                  "example": "Regular"
+                },
+                "size": {
+                  "type": "string",
+                  "description": "Size of the product",
+                  "example": "500g"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "description": "Quantity requested",
+                  "example": 20
+                }
+              }
+            }
+          }
+        }
+      },
+      "SalesInquiry": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Sales inquiry ID",
+            "example": "60d21b1c67d0d8992e610c85"
+          },
+          "distributorId": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c83"
+              },
+              "name": {
+                "type": "string",
+                "example": "ABC Enterprises"
+              },
+              "contact": {
+                "type": "string",
+                "example": "9876543210"
+              },
+              "address": {
+                "type": "string",
+                "example": "123 Main St, City"
+              }
+            }
+          },
+          "distributorName": {
+            "type": "string",
+            "description": "Distributor name",
+            "example": "ABC Enterprises"
+          },
+          "products": {
+            "type": "array",
+            "description": "Array of products for the inquiry",
+            "items": {
+              "type": "object",
+              "properties": {
+                "brand": {
+                  "type": "string",
+                  "example": "FoodBrand"
+                },
+                "variant": {
+                  "type": "string",
+                  "example": "Regular"
+                },
+                "size": {
+                  "type": "string",
+                  "example": "500g"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "example": 20
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Pending", "Processing", "Commented", "Completed", "Rejected", "Dispatched"],
+            "description": "Current status of the inquiry",
+            "example": "Pending"
+          },
+          "createdBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c84"
+              },
+              "name": {
+                "type": "string",
+                "example": "John Doe"
+              },
+              "role": {
+                "type": "string",
+                "example": "Marketing Staff"
+              }
+            }
+          },
+          "processedBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c86"
+              },
+              "name": {
+                "type": "string",
+                "example": "Jane Smith"
+              },
+              "role": {
+                "type": "string",
+                "example": "Admin"
+              }
+            }
+          },
+          "processedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when the inquiry was processed",
+            "example": "2023-05-20T14:30:00.000Z"
+          },
+          "dispatchedBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c87"
+              },
+              "name": {
+                "type": "string",
+                "example": "Mike Johnson"
+              },
+              "role": {
+                "type": "string",
+                "example": "Godown Incharge"
+              }
+            }
+          },
+          "dispatchDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the order was dispatched",
+            "example": "2023-05-10"
+          },
+          "dispatchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Exact timestamp when the order was dispatched",
+            "example": "2023-05-10T09:30:00.000Z"
+          },
+          "vehicleId": {
+            "type": "string",
+            "description": "Vehicle ID/number used for transport",
+            "example": "DL 01 AC 2011"
+          },
+          "referenceNumber": {
+            "type": "string",
+            "description": "Optional reference number for the dispatch",
+            "example": "REF123456"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Processing notes",
+            "example": "Order processed and forwarded to logistics"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when the inquiry was created",
+            "example": "2023-05-15T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when the inquiry was last updated",
+            "example": "2023-05-20T14:30:00.000Z"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "Error message"
+          }
+        }
+      },
+      "DamageClaim": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Damage claim ID",
+            "example": "60d21b1c67d0d8992e610c87"
+          },
+          "trackingId": {
+            "type": "string",
+            "description": "Unique tracking ID for the damage claim",
+            "example": "DMG2023051001"
+          },
+          "distributorId": {
+            "type": "string",
+            "description": "ID of the distributor",
+            "example": "60d21b1c67d0d8992e610c83"
+          },
+          "distributorName": {
+            "type": "string",
+            "description": "Name of the distributor",
+            "example": "ABC Enterprises"
+          },
+          "damageDetails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "brand": {
+                  "type": "string",
+                  "example": "FoodBrand"
+                },
+                "variant": {
+                  "type": "string",
+                  "example": "Regular"
+                },
+                "size": {
+                  "type": "string",
+                  "example": "500g"
+                },
+                "totalPieces": {
+                  "type": "integer",
+                  "example": 10
+                },
+                "damagedPieces": {
+                  "type": "integer",
+                  "example": 5
+                },
+                "damageType": {
+                  "type": "string",
+                  "example": "Packaging Damage"
+                },
+                "approvedPieces": {
+                  "type": "integer",
+                  "example": 3
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "example": "uploads/damage-claims/image1.jpg"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Pending", "Approved", "Partially Approved", "Rejected"],
+            "example": "Pending"
+          },
+          "mlmComment": {
+            "type": "string",
+            "example": "Verified the damage claim. Pictures are clear."
+          },
+          "adminComment": {
+            "type": "string",
+            "example": "Approving 3 pieces due to verified packaging damage."
+          },
+          "createdBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c84"
+              },
+              "name": {
+                "type": "string",
+                "example": "John Doe"
+              },
+              "role": {
+                "type": "string",
+                "example": "Marketing Staff"
+              }
+            }
+          },
+          "processedBy": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "60d21b1c67d0d8992e610c86"
+              },
+              "name": {
+                "type": "string",
+                "example": "Jane Smith"
+              },
+              "role": {
+                "type": "string",
+                "example": "Admin"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-05-15T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-05-20T14:30:00.000Z"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "User ID",
+            "example": "60d21b1c67d0d8992e610c84"
+          },
+          "name": {
+            "type": "string",
+            "description": "User's full name",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "description": "User's email address",
+            "example": "john.doe@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number",
+            "example": "9876543210"
+          },
+          "role": {
+            "type": "string",
+            "description": "User's role in the system",
+            "example": "Marketing Staff",
+            "enum": ["Admin", "Sub-Admin", "Mid-Level Manager", "Marketing Staff", "Godown Incharge"]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the user account is active",
+            "example": true
+          },
+          "lastLogin": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of last login",
+            "example": "2023-05-15T10:00:00.000Z"
+          },
+          "assignedDistributors": {
+            "type": "array",
+            "description": "Distributors assigned to this user (for Marketing Staff)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string",
+                  "example": "60d21b1c67d0d8992e610c83"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "ABC Enterprises"
+                }
+              }
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "description": "User permissions (for Admin/Sub-Admin roles)",
+            "items": {
+              "type": "string",
+              "example": "manage_staff"
+            }
+          }
+        }
+      },
+      "MarketingStaffActivity": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Activity ID",
+            "example": "60f7b0b3c9d4a84e8c9d4a84"
+          },
+          "marketingStaffId": {
+            "type": "string",
+            "description": "ID of the marketing staff",
+            "example": "60f7b0b3c9d4a84e8c9d4a84"
+          },
+          "retailShop": {
+            "type": "string",
+            "example": "Shyam ji foods"
+          },
+          "distributor": {
+            "type": "string",
+            "example": "Shyam Chaudhary"
+          },
+          "areaName": {
+            "type": "string",
+            "example": "223/23, Ramesh Nagar, Delhi"
+          },
+          "tripCompanion": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": ["Distributor Staff", "Marketing Staff"],
+                "example": "Distributor Staff"
+              },
+              "name": {
+                "type": "string",
+                "example": "Nitin"
+              }
+            }
+          },
+          "modeOfTransport": {
+            "type": "string",
+            "enum": ["Vehicle", "Auto", "Bike"],
+            "example": "Vehicle"
+          },
+          "meetingStartTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-07-21T10:30:00.000Z"
+          },
+          "meetingEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-07-21T12:45:00.000Z"
+          },
+          "selfieImage": {
+            "type": "string",
+            "example": "/uploads/selfies/selfie_60f7b0b3c9d4a84e8c9d4a84_1689939000000.jpg"
+          },
+          "shopTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["Retailer", "Whole Seller"]
+            },
+            "example": ["Retailer", "Whole Seller"]
+          },
+          "shops": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "Nandu Shop"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["Retailer", "Whole Seller"],
+                  "example": "Retailer"
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Punched In", "Punched Out"],
+            "example": "Punched In"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-07-21T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-07-21T10:30:00.000Z"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
