@@ -5,7 +5,9 @@ import { TOKEN_KEY, USER_KEY } from './config';
 export const api = axios.create({
   // baseURL: API_URL,
   // baseURL: 'http://localhost:5050/api',
-  baseURL: 'https://kallakuri.volvrit.org/api',
+  //baseURL: 'https://kallakuri.volvrit.org/api',
+  baseURL: 'https://api.helloandhellomrk.in/api',
+
   headers: {
     'Content-Type': 'application/json',
   },
