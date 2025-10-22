@@ -13,12 +13,22 @@ import {
   List,
   ListItem,
   Divider,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { distributorService } from '../../services/api';
@@ -32,6 +42,12 @@ const Distributors = () => {
     totalDistributors: 0,
     totalRetailShops: 0
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [distributorToDelete, setDistributorToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   
   const navigate = useNavigate();
 
@@ -91,6 +107,65 @@ const Distributors = () => {
   // Handle distributor click
   const handleDistributorClick = (id) => {
     navigate(`/distributors/${id}`);
+  };
+
+  // Handle delete distributor
+  const handleDeleteDistributor = (distributor) => {
+    setDistributorToDelete(distributor);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!distributorToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      const response = await distributorService.deleteDistributor(distributorToDelete._id);
+      if (response.success) {
+        // Remove from local state
+        setDistributors(prev => prev.filter(d => d._id !== distributorToDelete._id));
+        
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          totalDistributors: prev.totalDistributors - 1
+        }));
+        
+        setSnackbarMessage('Distributor deleted successfully');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } else {
+        setSnackbarMessage(response.error || 'Failed to delete distributor');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Error deleting distributor:', error);
+      setSnackbarMessage(error.message || 'Failed to delete distributor');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+      setDistributorToDelete(null);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setDistributorToDelete(null);
+  };
+
+  // Handle edit distributor
+  const handleEditDistributor = (id) => {
+    navigate(`/distributors/${id}/edit`);
+  };
+
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -184,23 +259,43 @@ const Distributors = () => {
           <List sx={{ width: '100%' }}>
             {filteredDistributors.map((distributor, index) => (
               <React.Fragment key={distributor._id}>
-                <ListItem 
-                  button 
-                  onClick={() => handleDistributorClick(distributor._id)}
-                  sx={{ py: 2 }}
-                >
-                  <Box sx={{ width: '100%', p: 2 }}>
-                    <Typography variant="h6" component="div" fontWeight="bold">
-                      {distributor.name}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {distributor.shopName || 'No shop name provided'}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                      <LocationIcon fontSize="small" sx={{ color: '#B78427', mr: 0.5 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {distributor.address}
+                <ListItem sx={{ py: 2 }}>
+                  <Box sx={{ width: '100%', p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ flex: 1, cursor: 'pointer' }} onClick={() => handleDistributorClick(distributor._id)}>
+                      <Typography variant="h6" component="div" fontWeight="bold">
+                        {distributor.name}
                       </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        {distributor.shopName || 'No shop name provided'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <LocationIcon fontSize="small" sx={{ color: '#B78427', mr: 0.5 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {distributor.address}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditDistributor(distributor._id);
+                        }}
+                        color="primary"
+                        size="small"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDistributor(distributor);
+                        }}
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     </Box>
                   </Box>
                 </ListItem>
@@ -210,6 +305,49 @@ const Distributors = () => {
           </List>
         )}
       </Paper>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={cancelDelete}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Distributor
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete "{distributorToDelete?.name}"? This action cannot be undone.
+            This will also delete all associated shops and data.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDelete} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

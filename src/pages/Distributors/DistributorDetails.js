@@ -25,7 +25,14 @@ import {
   TextField,
   InputAdornment,
   Menu,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  // Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -33,10 +40,11 @@ import {
   BarChart as ChartIcon,
   Search as SearchIcon,
   Edit as EditIcon,
-  ArrowDropDown as ArrowDropDownIcon
+  ArrowDropDown as ArrowDropDownIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { distributorService, taskService, supplyEstimateService } from '../../services/api';
+import { distributorService, taskService, supplyEstimateService, shopService } from '../../services/api';
 
 const DistributorDetails = () => {
   const navigate = useNavigate();
@@ -48,6 +56,20 @@ const DistributorDetails = () => {
   const [shopFilter, setShopFilter] = useState('all');
   const [stockEstimates, setStockEstimates] = useState([]);
   const [addShopMenuAnchorEl, setAddShopMenuAnchorEl] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [editShopDialogOpen, setEditShopDialogOpen] = useState(false);
+  const [selectedShop, setSelectedShop] = useState(null);
+  const [editShopLoading, setEditShopLoading] = useState(false);
+  const [shopFormData, setShopFormData] = useState({
+    name: '',
+    ownerName: '',
+    address: '',
+    type: ''
+  });
   
   useEffect(() => {
     const fetchDistributorData = async () => {
@@ -127,6 +149,128 @@ const DistributorDetails = () => {
 
   const handleShopFilterChange = (event) => {
     setShopFilter(event.target.value);
+  };
+
+  const handleDeleteDistributor = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      const response = await distributorService.deleteDistributor(id);
+      if (response.success) {
+        setSnackbarMessage('Distributor deleted successfully');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+        setTimeout(() => navigate('/distributors'), 2000);
+      } else {
+        setSnackbarMessage(response.error || 'Failed to delete distributor');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Error deleting distributor:', error);
+      setSnackbarMessage(error.message || 'Failed to delete distributor');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  const handleEditShop = (shop) => {
+    setSelectedShop(shop);
+    setShopFormData({
+      name: shop.shopName || shop.name || '',
+      ownerName: shop.ownerName || '',
+      address: shop.address || '',
+      type: shop.type || (shopFilter === 'retail' ? 'Retailer' : 'Whole Seller')
+    });
+    setEditShopDialogOpen(true);
+  };
+
+  const handleShopFormChange = (field, value) => {
+    setShopFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleUpdateShop = async () => {
+    if (!selectedShop) return;
+    
+    setEditShopLoading(true);
+    try {
+      // Check if this is a legacy shop (from distributor document) or new shop (from Shop collection)
+      if (selectedShop.isLegacy) {
+        // For legacy shops, we need to update the distributor document
+        const response = await distributorService.updateDistributor(id, {
+          // We'll need to implement a specific endpoint for updating legacy shops
+          // For now, we'll show a message that legacy shops need to be migrated
+          name: distributor.name,
+          shopName: distributor.shopName,
+          contact: distributor.contact,
+          address: distributor.address,
+          phoneNumber: distributor.phoneNumber
+        });
+        
+        if (response.success) {
+          setSnackbarMessage('Legacy shop updated successfully');
+          setSnackbarSeverity('success');
+          setSnackbarOpen(true);
+          // Refresh distributor data
+          window.location.reload();
+        } else {
+          setSnackbarMessage(response.error || 'Failed to update legacy shop');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        }
+      } else {
+        // For new shops, update via shop service
+        const response = await shopService.updateShop(selectedShop._id, shopFormData);
+        if (response.success) {
+          setSnackbarMessage('Shop updated successfully');
+          setSnackbarSeverity('success');
+          setSnackbarOpen(true);
+          // Refresh distributor data
+          window.location.reload();
+        } else {
+          setSnackbarMessage(response.error || 'Failed to update shop');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating shop:', error);
+      setSnackbarMessage(error.message || 'Failed to update shop');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setEditShopLoading(false);
+      setEditShopDialogOpen(false);
+      setSelectedShop(null);
+    }
+  };
+
+  const cancelEditShop = () => {
+    setEditShopDialogOpen(false);
+    setSelectedShop(null);
+    setShopFormData({
+      name: '',
+      ownerName: '',
+      address: '',
+      type: ''
+    });
   };
 
   const getStatusColor = (status) => {
@@ -223,6 +367,14 @@ const DistributorDetails = () => {
         >
           Edit
         </Button>
+        <Button
+          variant="contained"
+          startIcon={<DeleteIcon />}
+          onClick={handleDeleteDistributor}
+          sx={{ bgcolor: '#f44336' }}
+        >
+          Delete
+        </Button>
       </Box>
 
       {/* Distributor Info Card */}
@@ -310,7 +462,7 @@ const DistributorDetails = () => {
       </Grid>
       
       {/* Initial Stock Estimate Button */}
-      <Box sx={{ mb: 4 }}>
+      {/* <Box sx={{ mb: 4 }}>
         <Button
           variant="contained"
           onClick={handleViewStockEstimate}
@@ -318,7 +470,7 @@ const DistributorDetails = () => {
         >
           See Initial Stock Estimate and Rate
         </Button>
-      </Box>
+      </Box> */}
 
       {/* Retail shops & Whole sellers section */}
       <Box sx={{ mb: 3 }}>
@@ -398,6 +550,7 @@ const DistributorDetails = () => {
                 <TableCell>Owner Name</TableCell>
                 <TableCell>Address</TableCell>
                 <TableCell>Type</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -413,11 +566,21 @@ const DistributorDetails = () => {
                          shopFilter === 'wholesale' ? 'Wholesale Shop' : 
                          (shop.shopName && distributor.retailShops?.some(rs => rs.shopName === shop.shopName) ? 'Retail Shop' : 'Wholesale Shop'))}
                     </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={() => handleEditShop(shop)}
+                        color="primary"
+                        size="small"
+                        title="Edit Shop"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={5} align="center">
                     No shops found
                   </TableCell>
                 </TableRow>
@@ -484,6 +647,123 @@ const DistributorDetails = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Edit Shop Dialog */}
+      <Dialog
+        open={editShopDialogOpen}
+        onClose={cancelEditShop}
+        aria-labelledby="edit-shop-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="edit-shop-dialog-title">
+          Edit Shop Details
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="shopName"
+            label="Shop Name"
+            fullWidth
+            variant="outlined"
+            value={shopFormData.name}
+            onChange={(e) => handleShopFormChange('name', e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            id="ownerName"
+            label="Owner Name"
+            fullWidth
+            variant="outlined"
+            value={shopFormData.ownerName}
+            onChange={(e) => handleShopFormChange('ownerName', e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            id="address"
+            label="Address"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={3}
+            value={shopFormData.address}
+            onChange={(e) => handleShopFormChange('address', e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            id="type"
+            label="Shop Type"
+            fullWidth
+            variant="outlined"
+            select
+            value={shopFormData.type}
+            onChange={(e) => handleShopFormChange('type', e.target.value)}
+            sx={{ mb: 2 }}
+          >
+            <MenuItem value="Retailer">Retail Shop</MenuItem>
+            <MenuItem value="Whole Seller">Wholesale Shop</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelEditShop} disabled={editShopLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleUpdateShop} 
+            variant="contained"
+            disabled={editShopLoading}
+          >
+            {editShopLoading ? <CircularProgress size={20} /> : 'Update Shop'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={cancelDelete}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Distributor
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete "{distributor?.name}"? This action cannot be undone.
+            This will also delete all associated shops and data.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDelete} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
