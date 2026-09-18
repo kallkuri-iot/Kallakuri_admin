@@ -64,14 +64,5 @@ jobs:
             npm install --no-audit --no-fund
             npm run build
 
-            # PM2: restart if exists; otherwise start with PORT=3001
-            if pm2 describe realstate-node-app >/dev/null 2>&1; then
-              pm2 restart kallakuri-admin-app
-            else
-              PORT=3987 pm2 start npm --name "kallakuri-admin-app" -- start
-            fi
-
-            pm2 save
-
             # Reload/restart nginx (choose one)
             sudo systemctl reload nginx || sudo systemctl restart nginx
